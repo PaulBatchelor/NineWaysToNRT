@@ -1,12 +1,5 @@
 <CsoundSynthesizer>
-<CsOptions>
--d -odac:system:playback_ -+rtaudio="jack" 
--b 2048
--L stdin
-</CsOptions>
 <CsInstruments>
-
-
 sr	=	96000
 ksmps	=	1
 nchnls	=	2
@@ -29,10 +22,6 @@ aL, aR reverbsc gaRev, gaRev, 0.97, 10000
 clear gaRev
 outs aL, aR
 endin
-
 </CsInstruments>
-<CsScore>
-
-</CsScore>
 </CsoundSynthesizer>
 

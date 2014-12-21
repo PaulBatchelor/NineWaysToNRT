@@ -1,1 +1,1 @@
-echo "drm" | nrt | awk -F',' '{print "i1",$1,$2,$3}'
+echo "drm" | nrt | awk -F',' '{print "i1",$1,$2,$3 + 60}'
