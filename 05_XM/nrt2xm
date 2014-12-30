@@ -1,0 +1,102 @@
+#!/usr/local/bin/lua
+
+--split function from SO question:
+--http://stackoverflow.com/questions/1426954/split-string-in-lua
+
+require("xmt")
+
+function split(inputstr, sep)
+    if sep == nil then
+            sep = "%s"
+    end
+    local t={} ; i=1
+    for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+            t[i] = str
+            i = i + 1
+    end
+    return t
+end
+
+function writeNote(chan, time, dur, note)
+--    print(chan, time, dur, note)
+    ntbl[chan + 1][time] = note
+    ntbl[chan + 1][time + dur] = -1
+end
+
+function writeXMFile(tbl, xmFile, filename)
+    local pos, pat
+    for chan, col in pairs(tbl) do
+        for time, note in pairs(col) do
+        pos = time % 64
+        pat = math.floor(time / 64)
+            if(note == -1) then
+            --Note Off
+            xmFile:addnote(pat, chan - 1, pos, 
+            makenote(XMT.NOTEOFF))
+            else 
+            --Note On
+            xmFile:addnote(pat, chan - 1, pos, 
+            makenote(note, square, 0x20)) 
+            end
+        --io.output(time, chan, note, "\n")
+        end
+    end
+    xmFile:write(filename) 
+end 
+
+function create_square(size, pw)
+    local tbl = {}
+    for i = 1, size, 1 do
+        if(i < size * pw) then
+            table.insert(tbl, 1)
+        else
+            table.insert(tbl, -1)
+        end
+    end
+    return tbl
+end
+
+function parsetbl(vals)
+    time = vals[1] * res
+    dur = vals[2] * res
+    note = vals[3] + base 
+    if(prevtime == time) then
+        chan = (chan + 1) % maxchan
+    else
+        chan = 0
+    end
+
+    --print(string.format("Channel %d", chan))
+    writeNote(chan, time, dur, note)
+
+    prevtime = time
+        
+end
+
+--global values
+res = 4
+base = arg[3]
+maxchan = 4
+chan = 0
+prevtime = -1
+ntbl = {{}, {}, {}, {}} --with maxchan = 4
+x = XMT:create({nchan = maxchan, bpm=arg[2]})
+
+square = x:set_loop_mode(
+x:addbuf(x:addins(), 
+create_square(64, 0.5)), 
+XMT.FORWARD)
+
+for i = 1, 5, 1 do 
+    x:addpat()
+    x:update_ptable(i - 1, i - 1) 
+end
+
+while(true) do
+    input = io.read()
+    if(input == nil) then break end
+    vals = split(input, " ")
+    parsetbl(vals)
+end
+
+writeXMFile(ntbl, x, arg[1])
