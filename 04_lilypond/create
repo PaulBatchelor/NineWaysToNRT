@@ -1,0 +1,16 @@
+#!/bin/bash
+MODE="sharp" #"sharp" or "flat" notes
+KEY=9 #0-11, offset in semitomes
+OCTOFFSET=-1 #octave offset
+FILENAME=lilynotes.png
+
+echo $KEY $MODE $OCTOFFSET |\
+    cat - <(echo "d4. r8 m f s2 t4 D4.") |\
+    nrt2ly | lilypond -o out - 
+
+#convert pdf to png, remove pdf
+convert -flatten out.pdf $FILENAME
+rm out.pdf out.ps
+
+echo -e "\nSuccessfully wrote to file $FILENAME"
+

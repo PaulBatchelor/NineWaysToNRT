@@ -1,0 +1,117 @@
+#!/usr/bin/perl
+use 5.010; 
+use strict;
+
+my %whiteKeys = {c => 0, d=>2, e=>4, f=>5, g=>7, a=>9, b=>11};
+
+my $mode = "flat";
+my $key = 0;
+
+my $octOffset = 2;
+my @sharpNotes = qw(c cis d dis e f fis g gis a ais b);
+my @flatNotes = qw(c des d ees e f ges g aes a bes b);
+my %solf = ('d' => 0, 'r' => 2, m => 4, f => 5, s => 7, l => 9, t=>11,
+'D' => 12, 'R' => 14, M => 16, F => 17, S => 19, L => 21, T=>23
+);
+my %acc = ('+' => 1, '-' => -1, '=' => 0);
+
+sub getScale
+{
+    my($key, $scaleDeg) = @_;
+    my $out;
+    my $notNum = $scaleDeg + $key;
+    my $exOctave = int($notNum / 12);
+    if($mode =~ /flat/)
+    {
+        $out = $flatNotes[($notNum) % 12];
+    }elsif($mode =~ /sharp/) {
+        $out = $sharpNotes[($notNum) % 12];
+    }
+    return $out, $exOctave;
+}
+
+sub parseOctave
+{
+    my $out;
+    #my $numOcts = scalar split "", $_[0];
+    my $numOcts = 0;
+    $numOcts += $_[1];
+    $numOcts += $octOffset;
+
+    if($_[0] =~ /'/){
+        foreach (split "", $_[0]) {
+            $numOcts += 1;
+        }
+    }elsif($_[0] =~ /,/){
+        foreach (split "", $_[0]) {
+            $numOcts -= 1;
+        }
+    }
+ 
+    if($numOcts > 0) {
+        foreach(1..$numOcts) { $out .="'" };
+    }elsif($numOcts < 0) {
+        foreach(1..abs($numOcts)) { $out .="," };
+    }
+
+    return $out;
+}
+
+sub parseNote
+{
+    my @params = $_[0] =~ 
+    /([zdrmfsltDRMFSLT])([+\-=]?)([,']*)((?:[1-9][0-9]?[.]?)?)/; 
+    if($params[0] =~ /[^z]/){
+        my($note, $exOct) =  &getScale($key, $solf{$params[0]} + $acc{$params[1]});
+        return $note . &parseOctave($params[2],$exOct).$params[3];
+    }else{
+        return "r$params[2]$params[3]";
+    }
+}
+
+print <<END;
+
+#(set! paper-alist (cons '("my size" . (cons (* 400 pt) (* 150 pt))) paper-alist))
+\\header{
+tagline = ""
+}
+\\paper {
+  #(set-paper-size "my size")
+}
+\\version "2.11.12"
+\\layout{
+\\context {
+\\Staff 
+\\remove "Time_signature_engraver"
+\\remove "Bar_engraver"
+}
+}
+\\new Staff {
+\\key c \\major 
+END
+
+my $getParams = 1;
+while(<>)
+{
+    if($getParams) { 
+        my @p = split(" ", $_);
+        $key = $p[0];
+        $mode = $p[1];
+        $octOffset= $p[2] + 2;
+        $getParams = 0;
+    }else{
+        s/ //g;
+        s/([drmfsltDRMFSLT][+\-=]?[,']*(?:[1-9][0-9]?[.]?)?)/$1:/g;
+        my @notes = split ":", $_;
+        foreach (0..scalar(@notes) - 2)
+        {
+            #@notes."\n";
+            print &parseNote(@notes[$_]);
+        }
+    }
+}
+
+print <<END;
+\\bar "|."
+}
+END
