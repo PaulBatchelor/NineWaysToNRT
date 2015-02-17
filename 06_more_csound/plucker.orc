@@ -14,7 +14,3 @@ a1 *= linsegr(1, 1, 0)
 a1 = buthp(a1, 300)
 outs a1, a1
 endin
-
-instr 2
-exitnow 
-endin
